@@ -2,6 +2,11 @@ abstract class AuthEvent {}
 
 class AuthCheckRequested extends AuthEvent {}
 
-class AuthLoginRequest extends AuthEvent {}
+class AuthLoginRequested extends AuthEvent {
+  final String email;
+  final String password;
 
-class AuthLogoutkRequested extends AuthEvent {}
+  AuthLoginRequested({required this.email, required this.password});
+}
+
+class AuthLogoutRequested extends AuthEvent {}

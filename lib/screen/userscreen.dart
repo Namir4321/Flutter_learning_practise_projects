@@ -1,3 +1,5 @@
+import 'package:basic_widget/bloc/auth_bloc.dart';
+import 'package:basic_widget/bloc/auth_event.dart';
 import 'package:basic_widget/bloc/status.dart';
 import 'package:basic_widget/bloc/user_bloc.dart';
 import 'package:basic_widget/bloc/user_state.dart';
@@ -156,7 +158,17 @@ class _UserScreenState extends State<UserScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('User')),
+      appBar: AppBar(
+        title: const Text('User'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              context.read<AuthBloc>().add(AuthLogoutRequested());
+            },
+            icon: const Icon(Icons.logout),
+          ),
+        ],
+      ),
 
       body: BlocConsumer<UserBloc, UserState>(
         // ---------------- LISTENER ----------------
