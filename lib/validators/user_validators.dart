@@ -9,8 +9,12 @@ String? validateEmail(String? value) {
   if (value == null || value.trim().isEmpty) {
     return 'Email is required';
   }
-  if (!value.contains('@') && !value.contains(".com")) {
+
+  final email = value.trim();
+
+  if (!email.contains('@') || !email.contains('.')) {
     return 'Enter a valid email';
   }
+
   return null;
 }

@@ -7,6 +7,8 @@ abstract class UserEvent {}
 
 class UserLoadRequest extends UserEvent {}
 
+class UserLoadMoreRequest extends UserEvent {}
+
 class UserCreateRequest extends UserEvent {
   final String name;
   final String email;
@@ -37,12 +39,34 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     on<UserLoadRequest>((event, emit) async {
       emit(state.copyWith(status: Status.loading, clearError: true));
       try {
-        final users = await repository.getUsers();
+        final users = await repository.getUsers(page: 1, limit: 5);
 
         emit(state.copyWith(status: Status.success, users: users));
       } catch (er) {
         emit(
-          state.copyWith(status: Status.failure, errorMessage: er.toString()),
+          state.copyWith(status: Status.failure, errorMessage: er.toString(),isLoadingMore: false),
+        );
+      }
+    });
+    on<UserLoadMoreRequest>((event, emit) async {
+      if (!state.hasMore || state.isLoadingMore) return;
+
+      try {
+        final nextPage = state.currentPage + 1;
+
+        final newUsers = await repository.getUsers(page: nextPage, limit: 5);
+
+        emit(
+          state.copyWith(
+            users: [...state.users, ...newUsers],
+            currentPage: nextPage,
+            hasMore: newUsers.length == 5,
+            isLoadingMore: false,
+          ),
+        );
+      } catch (err) {
+        emit(
+          state.copyWith(status: Status.failure, errorMessage: err.toString(),isLoadingMore: false),
         );
       }
     });

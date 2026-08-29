@@ -18,7 +18,7 @@ class SecureStorage {
     return storage.write(key: 'refresh_token', value: token);
   }
 
-  Future<String?> getRefreshToken(String token) async {
+  Future<String?> getRefreshToken() async {
     return storage.read(key: 'refresh_token');
   }
 

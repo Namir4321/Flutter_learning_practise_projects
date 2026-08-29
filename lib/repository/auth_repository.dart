@@ -1,23 +1,30 @@
-import 'dart:convert';
+import 'package:basic_widget/bloc/network/api_client.dart';
+import 'package:basic_widget/bloc/network/api_exception.dart';
 import 'package:basic_widget/model/auth_response.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 
 class AuthRepository {
+  final ApiClient apiClient;
+
+  AuthRepository({required this.apiClient});
+
   Future<AuthResponse> login({
     required String email,
     required String password,
   }) async {
-    final response = await http.post(
-      Uri.parse('https://jsonplaceholder.typicode.com/users'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'password': password}),
-    );
-    if (response.statusCode == 201) {
+    try {
+      await apiClient.post('/users', {'email': email, 'password': password});
+
       return const AuthResponse(
-        accessToken: 'fake_acess_token',
-        refreshToken: 'fake_response_token',
+        accessToken: 'fake_access_token',
+        refreshToken: 'fake_refresh_token',
       );
+    } on DioException catch (error) {
+      if (error.error is ApiException) {
+        throw error.error as ApiException;
+      }
+
+      rethrow;
     }
-    throw Exception('Login Failed');
   }
 }

@@ -22,20 +22,14 @@ class _UserScreenState extends State<UserScreen> {
 
   final nameController = TextEditingController();
   final emailController = TextEditingController();
+  final ScrollController scrollController = ScrollController();
   String? selectedRole;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Load users when screen starts
-    context.read<UserBloc>().add(UserLoadRequest());
-  }
 
   @override
   void dispose() {
     nameController.dispose();
     emailController.dispose();
+    scrollController.dispose();
     super.dispose();
   }
 
@@ -70,87 +64,26 @@ class _UserScreenState extends State<UserScreen> {
     }
   }
 
+  @override
+  void initState() {
+    super.initState();
+    scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (scrollController.position.pixels >=
+        scrollController.position.maxScrollExtent - 200) {
+      context.read<UserBloc>().add(UserLoadMoreRequest());
+    }
+  }
   // ---------------- EDIT USER ----------------
 
   void _showEditUserDialog(User user) {
-    final editFormKey = GlobalKey<FormState>();
-
-    final editNameController = TextEditingController(text: user.name);
-
-    final editEmailController = TextEditingController(text: user.email);
-
-    // Keep reference to the existing Bloc
     final userBloc = context.read<UserBloc>();
-
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit User'),
-
-          content: Form(
-            key: editFormKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Name
-                TextFormField(
-                  controller: editNameController,
-                  validator: validateName,
-                  decoration: const InputDecoration(
-                    labelText: 'Name',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Email
-                TextFormField(
-                  controller: editEmailController,
-                  validator: validateEmail,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          actions: [
-            // Cancel
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-
-            // Update
-            ElevatedButton(
-              onPressed: () {
-                if (editFormKey.currentState?.validate() ?? false) {
-                  userBloc.add(
-                    UserUpdateRequest(
-                      id: user.id,
-                      name: editNameController.text.trim(),
-                      email: editEmailController.text.trim(),
-                    ),
-                  );
-
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Update'),
-            ),
-          ],
-        );
-      },
-    ).then((_) {
-      editNameController.dispose();
-      editEmailController.dispose();
-    });
+      builder: (context) => EditUserDialog(user: user, userBloc: userBloc),
+    );
   }
 
   // ---------------- BUILD ----------------
@@ -248,7 +181,8 @@ class _UserScreenState extends State<UserScreen> {
                 const Divider(height: 32),
 
                 // ---------------- USER LIST ----------------
-                Expanded(child: _buildUserList(state)),
+                // Expanded(child: _buildUserList(state)),
+                SizedBox(height: 300, child: _buildUserList(state)),
               ],
             ),
           );
@@ -293,9 +227,16 @@ class _UserScreenState extends State<UserScreen> {
 
     // Users
     return ListView.builder(
-      itemCount: state.users.length,
+      itemCount: state.users.length + (state.isLoadingMore ? 1 : 0),
+      controller: scrollController,
 
       itemBuilder: (context, index) {
+        if (index >= state.users.length) {
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
         final user = state.users[index];
 
         return ListTile(
@@ -327,6 +268,102 @@ class _UserScreenState extends State<UserScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class EditUserDialog extends StatefulWidget {
+  final User user;
+  final UserBloc userBloc;
+
+  const EditUserDialog({super.key, required this.user, required this.userBloc});
+
+  @override
+  State<EditUserDialog> createState() => _EditUserDialogState();
+}
+
+class _EditUserDialogState extends State<EditUserDialog> {
+  late TextEditingController editNameController;
+  late TextEditingController editEmailController;
+  final editFormKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    editNameController = TextEditingController(text: widget.user.name);
+    editEmailController = TextEditingController(text: widget.user.email);
+  }
+
+  @override
+  void dispose() {
+    editNameController.dispose();
+    editEmailController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit User'),
+      content: Form(
+        key: editFormKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: editNameController,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Name is required';
+                }
+                return null;
+              },
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: editEmailController,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Email is required';
+                }
+                if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                  return 'Enter a valid email';
+                }
+                return null;
+              },
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (editFormKey.currentState?.validate() ?? false) {
+              widget.userBloc.add(
+                UserUpdateRequest(
+                  id: widget.user.id,
+                  name: editNameController.text.trim(),
+                  email: editEmailController.text.trim(),
+                ),
+              );
+              Navigator.pop(context);
+            }
+          },
+          child: const Text('Update'),
+        ),
+      ],
     );
   }
 }

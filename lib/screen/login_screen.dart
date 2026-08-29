@@ -52,7 +52,6 @@ class _LoginScreenState extends State<LoginScreen> {
             }
           },
           builder: (context, State) {
-            final isLoading = State.status == AuthStatus.loading;
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

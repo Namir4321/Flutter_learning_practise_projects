@@ -1,43 +1,33 @@
+import 'package:basic_widget/bloc/network/api_client.dart';
 import 'package:basic_widget/model/user.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class UserRepository {
-  Future<List<User>> getUsers() async {
-    final response = await http.get(
-      Uri.parse('https://jsonplaceholder.typicode.com/users'),
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body) as List;
+  final ApiClient apiClient;
 
-      final users = data.map((json) => User.fromJson(json)).toList();
-      return users;
-    } else {
-      throw Exception('Failed to load user');
-    }
+  UserRepository({required this.apiClient});
+  Future<List<User>> getUsers({required int page, required int limit}) async {
+    final response = await apiClient.get(
+      '/users',
+      queryparameter: {'_page': page, '_limit': limit},
+    );
+
+    final List<dynamic> data = response.data;
+
+    return data
+        .map((json) => User.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
   Future<User> createUser({required String name, required String email}) async {
-    final response = await http.post(
-      Uri.parse('https://jsonplaceholder.typicode.com/users'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'name': name, 'email': email}),
-    );
-    if (response.statusCode == 201) {
-      final data = jsonDecode(response.body);
-      return User.fromJson(data);
-    } else {
-      throw Exception("Failed to create user");
-    }
+    final response = await apiClient.post('/users', {
+      'name': name,
+      'email': email,
+    });
+    return User.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<void> deleteUser(int id) async {
-    final response = await http.delete(
-      Uri.parse("https://jsonplaceholder.typicode.com/users/$id"),
-    );
-    if (response.statusCode != 200) {
-      throw Exception("Failed to delete the user");
-    }
+    await apiClient.delete("/users/$id");
   }
 
   Future<User> updateUser({
@@ -45,18 +35,10 @@ class UserRepository {
     required String name,
     required String email,
   }) async {
-    final response = await http.put(
-      Uri.parse('https://jsonplaceholder.typicode.com/users/$id'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'name': name, 'email': email}),
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-
-      return User.fromJson(data);
-    } else {
-      throw Exception('Failed to update user');
-    }
+    final response = await apiClient.put("/users/$id", {
+      'name': name,
+      'email': email,
+    });
+    return User.fromJson(response.data as Map<String, dynamic>);
   }
 }
