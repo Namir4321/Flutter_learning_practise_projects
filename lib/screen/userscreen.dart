@@ -8,6 +8,7 @@ import 'package:basic_widget/screen/selection_screen.dart';
 import 'package:basic_widget/validators/user_validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
 
 class UserScreen extends StatefulWidget {
   const UserScreen({super.key});
@@ -23,13 +24,17 @@ class _UserScreenState extends State<UserScreen> {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final ScrollController scrollController = ScrollController();
+  final searchController = TextEditingController();
   String? selectedRole;
+  Timer? _debounce;
 
   @override
   void dispose() {
     nameController.dispose();
     emailController.dispose();
     scrollController.dispose();
+    searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -178,6 +183,27 @@ class _UserScreenState extends State<UserScreen> {
                   onPressed: _selectRole,
                   child: Text(selectedRole ?? 'Select Role'),
                 ),
+
+                TextField(
+                  controller: searchController,
+                  decoration: const InputDecoration(
+                    labelText: 'Search user',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    _debounce?.cancel;
+
+                    _debounce = Timer(const Duration(milliseconds: 500), () {
+                      context.read<UserBloc>().add(
+                        UserSearchChanged(query: value.trim()),
+                      );
+                    });
+                    context.read<UserBloc>().add(
+                      UserSearchChanged(query: value.trim()),
+                    );
+                  },
+                ),
                 const Divider(height: 32),
 
                 // ---------------- USER LIST ----------------
@@ -298,6 +324,7 @@ class _EditUserDialogState extends State<EditUserDialog> {
   void dispose() {
     editNameController.dispose();
     editEmailController.dispose();
+
     super.dispose();
   }
 

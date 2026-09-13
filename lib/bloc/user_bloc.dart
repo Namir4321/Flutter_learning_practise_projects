@@ -21,6 +21,11 @@ class UserDeleteRequest extends UserEvent {
   UserDeleteRequest({required this.id});
 }
 
+class UserSearchChanged extends UserEvent {
+  final String query;
+  UserSearchChanged({required this.query});
+}
+
 class UserUpdateRequest extends UserEvent {
   final int id;
   final String name;
@@ -44,7 +49,11 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         emit(state.copyWith(status: Status.success, users: users));
       } catch (er) {
         emit(
-          state.copyWith(status: Status.failure, errorMessage: er.toString(),isLoadingMore: false),
+          state.copyWith(
+            status: Status.failure,
+            errorMessage: er.toString(),
+            isLoadingMore: false,
+          ),
         );
       }
     });
@@ -54,7 +63,11 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       try {
         final nextPage = state.currentPage + 1;
 
-        final newUsers = await repository.getUsers(page: nextPage, limit: 5);
+        final newUsers = await repository.getUsers(
+          page: nextPage,
+          limit: 5,
+          search: state.searchQuery,
+        );
 
         emit(
           state.copyWith(
@@ -66,7 +79,11 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         );
       } catch (err) {
         emit(
-          state.copyWith(status: Status.failure, errorMessage: err.toString(),isLoadingMore: false),
+          state.copyWith(
+            status: Status.failure,
+            errorMessage: err.toString(),
+            isLoadingMore: false,
+          ),
         );
       }
     });
@@ -122,6 +139,36 @@ class UserBloc extends Bloc<UserEvent, UserState> {
           return user;
         }).toList();
         emit(state.copyWith(status: Status.success, users: updatedUsers));
+      } catch (err) {
+        emit(
+          state.copyWith(status: Status.failure, errorMessage: err.toString()),
+        );
+      }
+    });
+
+    on<UserSearchChanged>((event, emit) async {
+      try {
+        emit(
+          state.copyWith(
+            status: Status.loading,
+            searchQuery: event.query,
+            clearError: true,
+          ),
+        );
+        final users = await repository.getUsers(
+          page: 1,
+          limit: 5,
+          search: event.query,
+        );
+        emit(
+          state.copyWith(
+            status: Status.success,
+            users: users,
+            currentPage: 1,
+            hasMore: users.length == 5,
+            searchQuery: event.query,
+          ),
+        );
       } catch (err) {
         emit(
           state.copyWith(status: Status.failure, errorMessage: err.toString()),

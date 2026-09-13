@@ -10,6 +10,7 @@ class UserState extends Equatable {
   final int currentPage;
   final bool hasMore;
   final bool isLoadingMore;
+  final String searchQuery;
 
   const UserState({
     this.status = Status.initial,
@@ -19,6 +20,7 @@ class UserState extends Equatable {
     this.currentPage = 1,
     this.hasMore = true,
     this.isLoadingMore = false,
+    this.searchQuery="",
   });
 
   UserState copyWith({
@@ -29,6 +31,7 @@ class UserState extends Equatable {
     int? currentPage,
     bool? hasMore,
     bool? isLoadingMore,
+    String? searchQuery
   }) {
     return UserState(
       status: status ?? this.status,
@@ -40,6 +43,7 @@ class UserState extends Equatable {
       currentPage: currentPage ?? this.currentPage,
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      searchQuery:searchQuery ?? this.searchQuery,
     );
   }
 

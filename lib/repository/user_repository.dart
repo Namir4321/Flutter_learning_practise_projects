@@ -5,10 +5,12 @@ class UserRepository {
   final ApiClient apiClient;
 
   UserRepository({required this.apiClient});
-  Future<List<User>> getUsers({required int page, required int limit}) async {
+  Future<List<User>> getUsers({required int page, required int limit,String? search}) async {
     final response = await apiClient.get(
       '/users',
-      queryparameter: {'_page': page, '_limit': limit},
+      queryparameter: {'_page': page, '_limit': limit,
+      if(search != null && search.isNotEmpty) 'name_like':'Leanne',
+      },
     );
 
     final List<dynamic> data = response.data;
