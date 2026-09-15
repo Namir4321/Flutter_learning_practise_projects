@@ -11,6 +11,7 @@ import 'package:basic_widget/screen/auth_gate.dart';
 import 'package:basic_widget/screen/user_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:basic_widget/screen/test_screen.dart';
 
 void main() {
   final secureStorage = SecureStorage();
@@ -54,6 +55,7 @@ class MyApp extends StatelessWidget {
           final user = arguments;
           return UserDetailScreen(user: user);
         },
+        '/file-test': (context) => const FileTestScreen(),
       },
     );
   }

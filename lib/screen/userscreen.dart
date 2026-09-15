@@ -183,7 +183,12 @@ class _UserScreenState extends State<UserScreen> {
                   onPressed: _selectRole,
                   child: Text(selectedRole ?? 'Select Role'),
                 ),
-
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/file-test');
+                  },
+                  child: const Text('Test File Picker'),
+                ),
                 TextField(
                   controller: searchController,
                   decoration: const InputDecoration(
