@@ -177,7 +177,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         );
       } on DioException catch (err) {
         if (err.type == DioExceptionType.cancel) {
-          debugPrint('OLD SEARCH CANCELLED: ${err.message}');
+          debugPrint('OLD SEARCH CANCELLED: ${err.error}');
 
           return;
         }
