@@ -17,9 +17,9 @@ class ApiClient {
     }
   }
 
-  Future<Response<dynamic>> post(String path, dynamic data) async {
+  Future<Response<dynamic>> post(String path, dynamic data, {ProgressCallback? onSendProgress}) async {
     try {
-      return await dio.post(path, data: data);
+      return await dio.post(path, data: data, onSendProgress: onSendProgress);
     } on DioException catch (err) {
       throw ApiErrorHandler.handle(err);
     }
@@ -46,7 +46,8 @@ class ApiClient {
           dio ??
           Dio(
             BaseOptions(
-              baseUrl: 'https://jsonplaceholder.typicode.com',
+              baseUrl: 'https://jsonplaceholder.typicode.com/',
+
               connectTimeout: const Duration(seconds: 10),
               receiveTimeout: const Duration(seconds: 10),
               headers: {'Content-Type': 'application/json'},

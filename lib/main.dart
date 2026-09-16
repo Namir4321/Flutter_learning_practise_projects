@@ -5,6 +5,7 @@ import 'package:basic_widget/bloc/user_bloc.dart';
 import 'package:basic_widget/data/secure_storage.dart';
 import 'package:basic_widget/model/user.dart';
 import 'package:basic_widget/repository/auth_repository.dart';
+import 'package:basic_widget/repository/upload_repository.dart';
 import 'package:basic_widget/repository/user_repository.dart';
 import 'package:basic_widget/screen/about_screen.dart';
 import 'package:basic_widget/screen/auth_gate.dart';
@@ -16,21 +17,27 @@ import 'package:basic_widget/screen/test_screen.dart';
 void main() {
   final secureStorage = SecureStorage();
   final apiClient = ApiClient(secureStorage: secureStorage);
-
   final authRepository = AuthRepository(apiClient: apiClient);
+  final uploadRepository = UploadRepository(apiClient: apiClient);
   runApp(
     BlocProvider(
       create: (_) =>
           AuthBloc(repository: authRepository, secureStorage: secureStorage)
             ..add(AuthCheckRequested()),
-      child: MyApp(apiClient: apiClient),
+      child: MyApp(apiClient: apiClient, uploadRepository: uploadRepository),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
   final ApiClient apiClient;
-  const MyApp({super.key, required this.apiClient});
+  final UploadRepository uploadRepository;
+
+  const MyApp({
+    super.key,
+    required this.apiClient,
+    required this.uploadRepository,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +62,9 @@ class MyApp extends StatelessWidget {
           final user = arguments;
           return UserDetailScreen(user: user);
         },
-        '/file-test': (context) => const FileTestScreen(),
+        '/file-test': (context) => FileTestScreen(
+              uploadRepository: uploadRepository,
+            ),
       },
     );
   }

@@ -1,9 +1,12 @@
+import 'package:basic_widget/repository/upload_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 class FileTestScreen extends StatefulWidget {
-  const FileTestScreen({super.key});
+  final UploadRepository uploadRepository;
+
+  const FileTestScreen({super.key, required this.uploadRepository});
 
   @override
   State<FileTestScreen> createState() => _FileTestScreenState();
@@ -11,6 +14,9 @@ class FileTestScreen extends StatefulWidget {
 
 class _FileTestScreenState extends State<FileTestScreen> {
   PlatformFile? selectedFile;
+  double uploadProgress = 0;
+  bool isUploading = false;
+  String? uploadMessage;
 
   Future<void> _pickFile() async {
     final result = await FilePicker.pickFiles(withData: true);
@@ -19,7 +25,9 @@ class _FileTestScreenState extends State<FileTestScreen> {
     if (result == null) {
       return;
     }
-
+    setState(() {
+      uploadProgress = 0;
+    });
     final file = result.files.single;
 
     setState(() {
@@ -62,6 +70,63 @@ class _FileTestScreenState extends State<FileTestScreen> {
     debugPrint('FORM DATA CREATED');
     debugPrint('Fields: ${formData.fields}');
     debugPrint('Files: ${formData.files}');
+  }
+
+  Future<void> _uploadFile() async {
+    if (selectedFile == null) {
+      setState(() {
+        uploadMessage = "Please Select a file first";
+      });
+      debugPrint('Please select a file first');
+      return;
+    }
+
+    final bytes = selectedFile!.bytes;
+
+    if (bytes == null) {
+      setState(() {
+        uploadMessage = "File bytes are unavaliable";
+      });
+      debugPrint('File bytes are unavaliable');
+      return;
+    }
+    setState(() {
+      isUploading = true;
+      uploadProgress = 0;
+      uploadMessage = null;
+    });
+    try {
+      debugPrint('UPLOAD STARTED');
+
+      final response = await widget.uploadRepository.uploadFile(
+        name: "Namir",
+        email: "nk.namirkhan1@gmial.com",
+        bytes: bytes,
+        fileName: selectedFile!.name,
+        onSendProgress: (sent, total) {
+          if (!mounted || total <= 0) return;
+          setState(() {
+            uploadProgress = sent / total;
+          });
+        },
+      );
+      if (!mounted) return;
+
+      setState(() {
+        isUploading = false;
+        uploadMessage = "File upload sucessfully";
+      });
+      debugPrint('UPLOAD SUCESS');
+      debugPrint('RESPONSE: $response');
+    } catch (err) {
+      if (!mounted) return;
+
+      setState(() {
+        isUploading = false;
+        uploadMessage = err.toString();
+      });
+      debugPrint('UPLOAD FAILED: $err');
+    }
   }
 
   @override
@@ -109,9 +174,22 @@ class _FileTestScreenState extends State<FileTestScreen> {
             const SizedBox(height: 24),
 
             ElevatedButton(
-              onPressed: _prepareUpload,
-              child: const Text('Prepare Upload'),
+              onPressed: isUploading ? null : _uploadFile,
+              child: Text(isUploading ? 'Uploading...' : 'Upload File'),
             ),
+
+            if (isUploading) ...[
+              const SizedBox(height: 16),
+              LinearProgressIndicator(value: uploadProgress),
+              const SizedBox(height: 8),
+
+              Text('${(uploadProgress * 100).toStringAsFixed(0)}%'),
+            ],
+
+            if (uploadMessage != null) ...[
+              const SizedBox(height: 12),
+              Text(uploadMessage!),
+            ],
           ],
         ),
       ),
