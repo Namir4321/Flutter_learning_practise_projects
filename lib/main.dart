@@ -18,12 +18,20 @@ void main() {
   final secureStorage = SecureStorage();
   final apiClient = ApiClient(secureStorage: secureStorage);
   final authRepository = AuthRepository(apiClient: apiClient);
+
+  final authBloc = AuthBloc(
+    repository: authRepository,
+    secureStorage: secureStorage,
+  );
+
+  apiClient.onSessionExpired = () {
+    authBloc.add(AuthLogoutRequested());
+  };
+  authBloc.add(AuthCheckRequested());
   final uploadRepository = UploadRepository(apiClient: apiClient);
   runApp(
-    BlocProvider(
-      create: (_) =>
-          AuthBloc(repository: authRepository, secureStorage: secureStorage)
-            ..add(AuthCheckRequested()),
+    BlocProvider.value(
+      value: authBloc,
       child: MyApp(apiClient: apiClient, uploadRepository: uploadRepository),
     ),
   );
@@ -62,9 +70,8 @@ class MyApp extends StatelessWidget {
           final user = arguments;
           return UserDetailScreen(user: user);
         },
-        '/file-test': (context) => FileTestScreen(
-              uploadRepository: uploadRepository,
-            ),
+        '/file-test': (context) =>
+            FileTestScreen(uploadRepository: uploadRepository),
       },
     );
   }

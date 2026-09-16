@@ -1,5 +1,7 @@
 import 'package:basic_widget/bloc/status.dart';
 import 'package:basic_widget/bloc/user_state.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:basic_widget/repository/user_repository.dart';
 
@@ -40,6 +42,7 @@ class UserUpdateRequest extends UserEvent {
 
 class UserBloc extends Bloc<UserEvent, UserState> {
   final UserRepository repository;
+  CancelToken? _searchCancelToken;
   UserBloc(this.repository) : super(const UserState()) {
     on<UserLoadRequest>((event, emit) async {
       emit(state.copyWith(status: Status.loading, clearError: true));
@@ -148,6 +151,8 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
     on<UserSearchChanged>((event, emit) async {
       try {
+        _searchCancelToken?.cancel("New search started");
+        _searchCancelToken = CancelToken();
         emit(
           state.copyWith(
             status: Status.loading,
@@ -159,6 +164,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
           page: 1,
           limit: 5,
           search: event.query,
+          cancelToken: _searchCancelToken,
         );
         emit(
           state.copyWith(
@@ -168,6 +174,15 @@ class UserBloc extends Bloc<UserEvent, UserState> {
             hasMore: users.length == 5,
             searchQuery: event.query,
           ),
+        );
+      } on DioException catch (err) {
+        if (err.type == DioExceptionType.cancel) {
+          debugPrint('OLD SEARCH CANCELLED: ${err.message}');
+
+          return;
+        }
+        emit(
+          state.copyWith(status: Status.failure, errorMessage: err.toString()),
         );
       } catch (err) {
         emit(

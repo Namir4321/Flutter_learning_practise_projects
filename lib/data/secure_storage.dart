@@ -11,7 +11,6 @@ class SecureStorage {
 
   Future<String?> getAccessToken() async {
     return storage.read(key: 'access_token');
-    
   }
 
   Future<void> saveRefreshToken(String token) async {

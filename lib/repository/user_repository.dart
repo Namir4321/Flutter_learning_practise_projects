@@ -1,16 +1,25 @@
 import 'package:basic_widget/bloc/network/api_client.dart';
 import 'package:basic_widget/model/user.dart';
+import 'package:dio/dio.dart';
 
 class UserRepository {
   final ApiClient apiClient;
 
   UserRepository({required this.apiClient});
-  Future<List<User>> getUsers({required int page, required int limit,String? search}) async {
+  Future<List<User>> getUsers({
+    required int page,
+    required int limit,
+    String? search,
+    CancelToken? cancelToken,
+  }) async {
     final response = await apiClient.get(
       '/users',
-      queryparameter: {'_page': page, '_limit': limit,
-      if(search != null && search.isNotEmpty) 'name_like':'Leanne',
+      queryparameter: {
+        '_page': page,
+        '_limit': limit,
+        if (search != null && search.isNotEmpty) 'name_like': 'Leanne',
       },
+      cancelToken: cancelToken,
     );
 
     final List<dynamic> data = response.data;
