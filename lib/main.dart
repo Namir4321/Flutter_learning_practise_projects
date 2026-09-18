@@ -10,6 +10,9 @@ import 'package:basic_widget/repository/user_repository.dart';
 import 'package:basic_widget/screen/about_screen.dart';
 import 'package:basic_widget/screen/auth_gate.dart';
 import 'package:basic_widget/screen/user_detail_screen.dart';
+import 'package:basic_widget/service/connectivity_bloc.dart';
+import 'package:basic_widget/service/connectivity_event.dart';
+import 'package:basic_widget/service/connectivity_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:basic_widget/screen/test_screen.dart';
@@ -18,11 +21,15 @@ void main() {
   final secureStorage = SecureStorage();
   final apiClient = ApiClient(secureStorage: secureStorage);
   final authRepository = AuthRepository(apiClient: apiClient);
-
+  final connectivityService = ConnectivityService();
   final authBloc = AuthBloc(
     repository: authRepository,
     secureStorage: secureStorage,
   );
+  final connectivityBloc = ConnectivityBloc(
+    connectivityService: connectivityService,
+  );
+  connectivityBloc.add(ConnectivityStarted());
 
   apiClient.onSessionExpired = () {
     authBloc.add(AuthLogoutRequested());
@@ -30,8 +37,11 @@ void main() {
   authBloc.add(AuthCheckRequested());
   final uploadRepository = UploadRepository(apiClient: apiClient);
   runApp(
-    BlocProvider.value(
-      value: authBloc,
+    MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: authBloc),
+        BlocProvider.value(value: connectivityBloc),
+      ],
       child: MyApp(apiClient: apiClient, uploadRepository: uploadRepository),
     ),
   );

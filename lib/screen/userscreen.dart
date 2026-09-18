@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:basic_widget/bloc/auth_bloc.dart';
 import 'package:basic_widget/bloc/auth_event.dart';
 import 'package:basic_widget/bloc/status.dart';
@@ -5,10 +7,11 @@ import 'package:basic_widget/bloc/user_bloc.dart';
 import 'package:basic_widget/bloc/user_state.dart';
 import 'package:basic_widget/model/user.dart';
 import 'package:basic_widget/screen/selection_screen.dart';
+import 'package:basic_widget/service/connectivity_bloc.dart';
+import 'package:basic_widget/service/connectivity_state.dart';
 import 'package:basic_widget/validators/user_validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'dart:async';
 
 class UserScreen extends StatefulWidget {
   const UserScreen({super.key});
@@ -18,15 +21,34 @@ class UserScreen extends StatefulWidget {
 }
 
 class _UserScreenState extends State<UserScreen> {
-  // Create user form
+  // ---------------- CREATE USER FORM ----------------
+
   final _formKey = GlobalKey<FormState>();
 
   final nameController = TextEditingController();
   final emailController = TextEditingController();
+
+  // ---------------- PAGINATION ----------------
+
   final ScrollController scrollController = ScrollController();
+
+  // ---------------- SEARCH ----------------
+
   final searchController = TextEditingController();
-  String? selectedRole;
   Timer? _debounce;
+
+  String? selectedRole;
+
+  // ---------------- INIT ----------------
+
+  @override
+  void initState() {
+    super.initState();
+
+    scrollController.addListener(_onScroll);
+  }
+
+  // ---------------- DISPOSE ----------------
 
   @override
   void dispose() {
@@ -34,14 +56,15 @@ class _UserScreenState extends State<UserScreen> {
     emailController.dispose();
     scrollController.dispose();
     searchController.dispose();
+
     _debounce?.cancel();
+
     super.dispose();
   }
 
   // ---------------- CREATE USER ----------------
 
   void _createUser() {
-    // Run all validators
     if (_formKey.currentState!.validate()) {
       context.read<UserBloc>().add(
         UserCreateRequest(
@@ -50,11 +73,12 @@ class _UserScreenState extends State<UserScreen> {
         ),
       );
 
-      // Clear form after validation passes
       nameController.clear();
       emailController.clear();
     }
   }
+
+  // ---------------- SELECT ROLE ----------------
 
   Future<void> _selectRole() async {
     final role = await Navigator.push<String>(
@@ -69,11 +93,7 @@ class _UserScreenState extends State<UserScreen> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    scrollController.addListener(_onScroll);
-  }
+  // ---------------- PAGINATION ----------------
 
   void _onScroll() {
     if (scrollController.position.pixels >=
@@ -81,10 +101,12 @@ class _UserScreenState extends State<UserScreen> {
       context.read<UserBloc>().add(UserLoadMoreRequest());
     }
   }
+
   // ---------------- EDIT USER ----------------
 
   void _showEditUserDialog(User user) {
     final userBloc = context.read<UserBloc>();
+
     showDialog(
       context: context,
       builder: (context) => EditUserDialog(user: user, userBloc: userBloc),
@@ -108,129 +130,179 @@ class _UserScreenState extends State<UserScreen> {
         ],
       ),
 
-      body: BlocConsumer<UserBloc, UserState>(
-        // ---------------- LISTENER ----------------
-        listener: (context, state) {
-          if (state.status == Status.createFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage ?? 'Failed to create user'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
+      // =========================================================
+      // MAIN BODY
+      // =========================================================
+      body: Column(
+        children: [
+          // =====================================================
+          // CONNECTIVITY BANNER
+          // =====================================================
+          BlocBuilder<ConnectivityBloc, ConnectivityState>(
+            builder: (context, connectivityState) {
+              if (connectivityState.status == ConnectivityStatus.disconnected) {
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
+                  child: const Text(
+                    'No network connection',
+                    textAlign: TextAlign.center,
+                  ),
+                );
+              }
 
-        // ---------------- BUILDER ----------------
-        builder: (context, state) {
-          final isCreating = state.status == Status.creating;
+              return const SizedBox.shrink();
+            },
+          ),
 
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
+          // =====================================================
+          // EXISTING USER SCREEN
+          // =====================================================
+          Expanded(
+            child: BlocConsumer<UserBloc, UserState>(
+              // ---------------- LISTENER ----------------
+              listener: (context, state) {
+                if (state.status == Status.createFailure) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        state.errorMessage ?? 'Failed to create user',
+                      ),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
 
-            child: Column(
-              children: [
-                // ---------------- CREATE FORM ----------------
-                Form(
-                  key: _formKey,
+              // ---------------- BUILDER ----------------
+              builder: (context, state) {
+                final isCreating = state.status == Status.creating;
+
+                return Padding(
+                  padding: const EdgeInsets.all(16.0),
+
                   child: Column(
                     children: [
-                      // Name
-                      TextFormField(
-                        controller: nameController,
-                        validator: validateName,
-                        decoration: const InputDecoration(
-                          labelText: 'Name',
-                          border: OutlineInputBorder(),
+                      // ---------------- CREATE FORM ----------------
+                      Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            // Name
+                            TextFormField(
+                              controller: nameController,
+                              validator: validateName,
+                              decoration: const InputDecoration(
+                                labelText: 'Name',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // Email
+                            TextFormField(
+                              controller: emailController,
+                              validator: validateEmail,
+                              decoration: const InputDecoration(
+                                labelText: 'Email',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
 
                       const SizedBox(height: 12),
 
-                      // Email
-                      TextFormField(
-                        controller: emailController,
-                        validator: validateEmail,
+                      // ---------------- CREATE BUTTON ----------------
+                      ElevatedButton(
+                        onPressed: isCreating ? null : _createUser,
+                        child: isCreating
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('Create User'),
+                      ),
+
+                      // ---------------- ABOUT ----------------
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/about');
+                        },
+                        child: const Text('About'),
+                      ),
+
+                      // ---------------- SELECT ROLE ----------------
+                      ElevatedButton(
+                        onPressed: _selectRole,
+                        child: Text(selectedRole ?? 'Select Role'),
+                      ),
+
+                      // ---------------- FILE PICKER ----------------
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/file-test');
+                        },
+                        child: const Text('Test File Picker'),
+                      ),
+
+                      // ---------------- SEARCH ----------------
+                      TextField(
+                        controller: searchController,
                         decoration: const InputDecoration(
-                          labelText: 'Email',
+                          labelText: 'Search user',
+                          prefixIcon: Icon(Icons.search),
                           border: OutlineInputBorder(),
                         ),
+                        onChanged: (value) {
+                          // Cancel previous debounce timer
+                          _debounce?.cancel();
+
+                          // Wait 500ms before searching
+                          _debounce = Timer(
+                            const Duration(milliseconds: 500),
+                            () {
+                              context.read<UserBloc>().add(
+                                UserSearchChanged(query: value.trim()),
+                              );
+                            },
+                          );
+                        },
                       ),
+
+                      const Divider(height: 32),
+
+                      // ---------------- USER LIST ----------------
+                      SizedBox(height: 300, child: _buildUserList(state)),
                     ],
                   ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // ---------------- CREATE BUTTON ----------------
-                ElevatedButton(
-                  onPressed: isCreating ? null : _createUser,
-                  child: isCreating
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Create User'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/about');
-                  },
-                  child: const Text("About"),
-                ),
-                ElevatedButton(
-                  onPressed: _selectRole,
-                  child: Text(selectedRole ?? 'Select Role'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/file-test');
-                  },
-                  child: const Text('Test File Picker'),
-                ),
-                TextField(
-                  controller: searchController,
-                  decoration: const InputDecoration(
-                    labelText: 'Search user',
-                    prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (value) {
-                    _debounce?.cancel;
-
-                    _debounce = Timer(const Duration(milliseconds: 500), () {
-                      context.read<UserBloc>().add(
-                        UserSearchChanged(query: value.trim()),
-                      );
-                    });
-                    context.read<UserBloc>().add(
-                      UserSearchChanged(query: value.trim()),
-                    );
-                  },
-                ),
-                const Divider(height: 32),
-
-                // ---------------- USER LIST ----------------
-                // Expanded(child: _buildUserList(state)),
-                SizedBox(height: 300, child: _buildUserList(state)),
-              ],
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
 
-  // ---------------- USER LIST ----------------
+  // =============================================================
+  // USER LIST
+  // =============================================================
 
   Widget _buildUserList(UserState state) {
-    // Loading users
+    // ---------------- LOADING ----------------
+
     if (state.status == Status.loading || state.status == Status.initial) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // GET failure
+    // ---------------- FAILURE ----------------
+
     if (state.status == Status.failure) {
       return Center(
         child: Column(
@@ -251,36 +323,43 @@ class _UserScreenState extends State<UserScreen> {
       );
     }
 
-    // No users
+    // ---------------- EMPTY ----------------
+
     if (state.users.isEmpty) {
       return const Center(child: Text('No users found'));
     }
 
-    // Users
+    // ---------------- USERS ----------------
+
     return ListView.builder(
-      itemCount: state.users.length + (state.isLoadingMore ? 1 : 0),
       controller: scrollController,
+      itemCount: state.users.length + (state.isLoadingMore ? 1 : 0),
 
       itemBuilder: (context, index) {
+        // Bottom pagination spinner
+
         if (index >= state.users.length) {
           return const Padding(
             padding: EdgeInsets.all(16),
             child: Center(child: CircularProgressIndicator()),
           );
         }
+
         final user = state.users[index];
 
         return ListTile(
           title: Text(user.name),
-
           subtitle: Text(user.email),
+
+          // ---------------- DETAILS ----------------
           onTap: () {
             Navigator.pushNamed(context, '/user-details', arguments: user);
           },
+
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // EDIT
+              // ---------------- EDIT ----------------
               IconButton(
                 onPressed: () {
                   _showEditUserDialog(user);
@@ -288,7 +367,7 @@ class _UserScreenState extends State<UserScreen> {
                 icon: const Icon(Icons.edit),
               ),
 
-              // DELETE
+              // ---------------- DELETE ----------------
               IconButton(
                 onPressed: () {
                   context.read<UserBloc>().add(UserDeleteRequest(id: user.id));
@@ -303,6 +382,10 @@ class _UserScreenState extends State<UserScreen> {
   }
 }
 
+// =================================================================
+// EDIT USER DIALOG
+// =================================================================
+
 class EditUserDialog extends StatefulWidget {
   final User user;
   final UserBloc userBloc;
@@ -316,14 +399,21 @@ class EditUserDialog extends StatefulWidget {
 class _EditUserDialogState extends State<EditUserDialog> {
   late TextEditingController editNameController;
   late TextEditingController editEmailController;
+
   final editFormKey = GlobalKey<FormState>();
+
+  // ---------------- INIT ----------------
 
   @override
   void initState() {
     super.initState();
+
     editNameController = TextEditingController(text: widget.user.name);
+
     editEmailController = TextEditingController(text: widget.user.email);
   }
+
+  // ---------------- DISPOSE ----------------
 
   @override
   void dispose() {
@@ -333,21 +423,26 @@ class _EditUserDialogState extends State<EditUserDialog> {
     super.dispose();
   }
 
+  // ---------------- BUILD ----------------
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Edit User'),
+
       content: Form(
         key: editFormKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // ---------------- NAME ----------------
             TextFormField(
               controller: editNameController,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Name is required';
                 }
+
                 return null;
               },
               decoration: const InputDecoration(
@@ -355,16 +450,21 @@ class _EditUserDialogState extends State<EditUserDialog> {
                 border: OutlineInputBorder(),
               ),
             ),
+
             const SizedBox(height: 12),
+
+            // ---------------- EMAIL ----------------
             TextFormField(
               controller: editEmailController,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Email is required';
                 }
+
                 if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
                   return 'Enter a valid email';
                 }
+
                 return null;
               },
               decoration: const InputDecoration(
@@ -375,11 +475,17 @@ class _EditUserDialogState extends State<EditUserDialog> {
           ],
         ),
       ),
+
       actions: [
+        // ---------------- CANCEL ----------------
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pop(context);
+          },
           child: const Text('Cancel'),
         ),
+
+        // ---------------- UPDATE ----------------
         ElevatedButton(
           onPressed: () {
             if (editFormKey.currentState?.validate() ?? false) {
@@ -390,6 +496,7 @@ class _EditUserDialogState extends State<EditUserDialog> {
                   email: editEmailController.text.trim(),
                 ),
               );
+
               Navigator.pop(context);
             }
           },

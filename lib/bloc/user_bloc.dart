@@ -62,6 +62,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     });
     on<UserLoadMoreRequest>((event, emit) async {
       if (!state.hasMore || state.isLoadingMore) return;
+      emit(state.copyWith(isLoadingMore: true, clearError: true));
 
       try {
         final nextPage = state.currentPage + 1;
