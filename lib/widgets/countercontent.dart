@@ -1,4 +1,4 @@
-import 'package:basic_widget/widgets/counterText.dart';
+import 'package:basic_widget/widgets/counter_text.dart';
 import 'package:basic_widget/widgets/counterbuttons.dart';
 import 'package:flutter/material.dart';
 

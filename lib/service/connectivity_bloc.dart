@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:basic_widget/service/connectivity_event.dart';
 import 'package:basic_widget/service/connectivity_service.dart';
 import 'package:basic_widget/service/connectivity_state.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ConnectivityBloc extends Bloc<ConnectivityEvent, ConnectivityState> {

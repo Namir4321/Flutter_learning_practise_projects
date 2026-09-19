@@ -1,6 +1,3 @@
-import 'package:basic_widget/bloc/status.dart';
-import 'package:flutter/cupertino.dart';
-
 enum ConnectivityStatus { initial, connectd, disconnected }
 
 class ConnectivityState {

@@ -5,17 +5,28 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:basic_widget/bloc/network/api_client.dart';
+import 'package:basic_widget/data/secure_storage.dart';
+import 'package:basic_widget/main.dart';
+import 'package:basic_widget/repository/upload_repository.dart';
+import 'package:basic_widget/service/user_cache_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:basic_widget/main.dart';
-import 'package:basic_widget/bloc/network/api_client.dart';
-import 'package:basic_widget/data/secure_storage.dart';
-
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    final secureStorage = SecureStorage();
+    final apiClient = ApiClient(secureStorage: secureStorage);
+    final uploadRepository = UploadRepository(apiClient: apiClient);
+
     // Build our app and trigger a frame.
-    await tester.pumpWidget(MyApp(apiClient: ApiClient(secureStorage: SecureStorage())));
+    await tester.pumpWidget(
+      MyApp(
+        apiClient: apiClient,
+        uploadRepository: uploadRepository,
+        userCacheService: UserCacheService(),
+      ),
+    );
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

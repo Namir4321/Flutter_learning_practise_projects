@@ -51,13 +51,18 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
         emit(state.copyWith(status: Status.success, users: users));
       } catch (er) {
-        emit(
-          state.copyWith(
-            status: Status.failure,
-            errorMessage: er.toString(),
-            isLoadingMore: false,
-          ),
-        );
+        final cachedUsers = await repository.getCachedUsers();
+        if (cachedUsers.isNotEmpty) {
+          emit(state.copyWith(status: Status.success, users: cachedUsers));
+        } else {
+          emit(
+            state.copyWith(
+              status: Status.failure,
+              errorMessage: er.toString(),
+              isLoadingMore: false,
+            ),
+          );
+        }
       }
     });
     on<UserLoadMoreRequest>((event, emit) async {

@@ -51,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
               );
             }
           },
-          builder: (context, State) {
+          builder: (context, state) {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
