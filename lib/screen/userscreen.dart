@@ -12,6 +12,7 @@ import 'package:basic_widget/service/connectivity_state.dart';
 import 'package:basic_widget/validators/user_validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class UserScreen extends StatefulWidget {
   const UserScreen({super.key});
@@ -353,7 +354,8 @@ class _UserScreenState extends State<UserScreen> {
 
           // ---------------- DETAILS ----------------
           onTap: () {
-            Navigator.pushNamed(context, '/user-details', arguments: user);
+            context.push('/user-details', extra: user);
+            // Navigator.pushNamed(context, '/user-details', arguments: user);
           },
 
           trailing: Row(
