@@ -3,6 +3,7 @@ import 'package:basic_widget/bloc/auth_event.dart';
 import 'package:basic_widget/bloc/auth_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -38,61 +39,70 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Login')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: BlocConsumer<AuthBloc, AuthState>(
-          listener: (context, state) {
-            if (state.status == AuthStatus.failure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.errorMessage ?? 'Login failed'),
-                  backgroundColor: Colors.red,
-                ),
+      body: BlocListener<AuthBloc, AuthState>(
+        listenWhen: (previous, current) =>
+            previous.status != current.status &&
+            current.status == AuthStatus.authenticated,
+        listener: (context, state) {
+          final from = GoRouter.of(context).state.uri.queryParameters['from'];
+          context.go(from ?? '/');
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: BlocConsumer<AuthBloc, AuthState>(
+            listener: (context, state) {
+              if (state.status == AuthStatus.failure) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.errorMessage ?? 'Login failed'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            builder: (context, state) {
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextField(
+                    controller: emailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  TextField(
+                    controller: passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Password',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                  BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, state) {
+                      final isLoading = state.status == AuthStatus.loading;
+                      return ElevatedButton(
+                        onPressed: isLoading ? null : _login,
+                        child: isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text("Login"),
+                      );
+                    },
+                  ),
+                ],
               );
-            }
-          },
-          builder: (context, state) {
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextField(
-                  controller: emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                TextField(
-                  controller: passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-                BlocBuilder<AuthBloc, AuthState>(
-                  builder: (context, state) {
-                    final isLoading = state.status == AuthStatus.loading;
-                    return ElevatedButton(
-                      onPressed: isLoading ? null : _login,
-                      child: isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text("Login"),
-                    );
-                  },
-                ),
-              ],
-            );
-          },
+            },
+          ),
         ),
       ),
     );

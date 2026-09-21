@@ -233,7 +233,7 @@ class _UserScreenState extends State<UserScreen> {
                       // ---------------- ABOUT ----------------
                       ElevatedButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, '/about');
+                          context.go('/about');
                         },
                         child: const Text('About'),
                       ),
@@ -247,7 +247,7 @@ class _UserScreenState extends State<UserScreen> {
                       // ---------------- FILE PICKER ----------------
                       ElevatedButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, '/file-test');
+                          context.go('/file-test');
                         },
                         child: const Text('Test File Picker'),
                       ),
@@ -354,7 +354,7 @@ class _UserScreenState extends State<UserScreen> {
 
           // ---------------- DETAILS ----------------
           onTap: () {
-            context.push('/user-details', extra: user);
+            context.push('/users/${user.id}');
             // Navigator.pushNamed(context, '/user-details', arguments: user);
           },
 

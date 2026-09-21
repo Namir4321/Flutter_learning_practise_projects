@@ -44,6 +44,11 @@ class UserRepository {
     return cacheduserlist;
   }
 
+  Future<User> getUserById(int id) async {
+    final response = await apiClient.get('/users/$id');
+    return User.fromJson(response.data as Map<String, dynamic>);
+  }
+
   Future<User> createUser({required String name, required String email}) async {
     final response = await apiClient.post('/users', {
       'name': name,

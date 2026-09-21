@@ -23,6 +23,11 @@ class UserDeleteRequest extends UserEvent {
   UserDeleteRequest({required this.id});
 }
 
+class UserDetailRequested extends UserEvent {
+  final int id;
+  UserDetailRequested(this.id);
+}
+
 class UserSearchChanged extends UserEvent {
   final String query;
   UserSearchChanged({required this.query});
@@ -193,6 +198,27 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       } catch (err) {
         emit(
           state.copyWith(status: Status.failure, errorMessage: err.toString()),
+        );
+      }
+    });
+    on<UserDetailRequested>((event, emit) async {
+      try {
+        emit(state.copyWith(status: Status.loading, clearError: true));
+
+        final user = await repository.getUserById(event.id);
+        emit(
+          state.copyWith(
+            status: Status.success,
+            selectedUser: user,
+            clearError: true,
+          ),
+        );
+      } catch (error) {
+        emit(
+          state.copyWith(
+            status: Status.failure,
+            errorMessage: error.toString(),
+          ),
         );
       }
     });
