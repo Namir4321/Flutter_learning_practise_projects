@@ -69,4 +69,5 @@ void main() {
       verify(() => mockUserRepository.getUserById(5)).called(1);
     },
   );
+  
 }

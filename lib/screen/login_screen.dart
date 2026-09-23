@@ -38,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(title: const Text('Login Page')),
       body: BlocListener<AuthBloc, AuthState>(
         listenWhen: (previous, current) =>
             previous.status != current.status &&
