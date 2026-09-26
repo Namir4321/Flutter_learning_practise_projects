@@ -5,7 +5,6 @@ import 'package:basic_widget/di/service_locator.dart';
 import 'package:basic_widget/repository/upload_repository.dart';
 import 'package:basic_widget/router/go_router_refresh_stream.dart';
 import 'package:basic_widget/screen/about_screen.dart';
-import 'package:basic_widget/screen/auth_gate.dart';
 import 'package:basic_widget/screen/login_screen.dart';
 import 'package:basic_widget/screen/test_screen.dart';
 import 'package:basic_widget/screen/user_detail_screen.dart';
@@ -13,6 +12,8 @@ import 'package:basic_widget/screen/userscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:basic_widget/bloc/user_detail_bloc.dart';
+import 'package:basic_widget/bloc/user_detail_event.dart';
 
 GoRouter createRouter(AuthBloc authBloc) {
   // Routes that require authentication.
@@ -103,8 +104,9 @@ GoRouter createRouter(AuthBloc authBloc) {
           if (id == null) {
             return const Scaffold(body: Center(child: Text('Invalid user Id')));
           }
-          return BlocProvider(
-            create: (_) => getIt<UserBloc>()..add(UserDetailRequested(id)),
+          return BlocProvider<UserDetailBloc>(
+            create: (_) =>
+                getIt<UserDetailBloc>()..add(UserDetailRequested(id)),
             child: const UserDetailScreen(),
           );
         },

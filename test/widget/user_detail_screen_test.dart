@@ -1,6 +1,8 @@
 import 'package:basic_widget/bloc/status.dart';
 import 'package:basic_widget/bloc/user_bloc.dart';
-import 'package:basic_widget/bloc/user_state.dart';
+import 'package:basic_widget/bloc/user_detail_bloc.dart';
+import 'package:basic_widget/bloc/user_detail_event.dart';
+import 'package:basic_widget/bloc/user_detail_state.dart';
 import 'package:basic_widget/model/user.dart';
 import 'package:basic_widget/screen/user_detail_screen.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -9,42 +11,43 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockUserBloc extends MockBloc<UserEvent, UserState> implements UserBloc {}
+class MockUserDetailBloc extends MockBloc<UserDetailEvent, UserDetailState>
+    implements UserDetailBloc {}
 
 void main() {
-  late MockUserBloc mockUserBloc;
+  late MockUserDetailBloc mockUserDetailBloc;
 
   setUp(() {
-    mockUserBloc = MockUserBloc();
+    mockUserDetailBloc = MockUserDetailBloc();
   });
 
-  testWidgets('shows loading indicator when UserBloc is loading', (
+  testWidgets('shows loading indicator when UserDetailBloc is loading', (
     tester,
   ) async {
     when(
-      () => mockUserBloc.state,
-    ).thenReturn(const UserState(status: Status.loading));
+      () => mockUserDetailBloc.state,
+    ).thenReturn(const UserDetailState(status: Status.loading));
 
     await tester.pumpWidget(
       MaterialApp(
-        home: BlocProvider<UserBloc>.value(
-          value: mockUserBloc,
+        home: BlocProvider<UserDetailBloc>.value(
+          value: mockUserDetailBloc,
           child: const UserDetailScreen(),
         ),
       ),
     );
+
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
-testWidgets(
-  'shows user details when UserBloc state is success',
+ testWidgets(
+  'shows user details when UserDetailBloc state is success',
   (tester) async {
-    // ARRANGE
     when(
-      () => mockUserBloc.state,
+      () => mockUserDetailBloc.state,
     ).thenReturn(
-      const UserState(
+      const UserDetailState(
         status: Status.success,
-        selectedUser: User(
+        user: User(
           id: 5,
           name: 'Namir',
           email: 'namir@example.com',
@@ -52,57 +55,41 @@ testWidgets(
       ),
     );
 
-    // ACT
     await tester.pumpWidget(
       MaterialApp(
-        home: BlocProvider<UserBloc>.value(
-          value: mockUserBloc,
+        home: BlocProvider<UserDetailBloc>.value(
+          value: mockUserDetailBloc,
           child: const UserDetailScreen(),
         ),
       ),
     );
 
-    // ASSERT
-    expect(
-      find.text('Namir'),
-      findsOneWidget,
-    );
-
-    expect(
-      find.text('namir@example.com'),
-      findsOneWidget,
-    );
-
-    expect(
-      find.text('User ID: 5'),
-      findsOneWidget,
-    );
+    expect(find.text('Namir'), findsOneWidget);
+    expect(find.text('namir@example.com'), findsOneWidget);
+    expect(find.text('User ID: 5'), findsOneWidget);
   },
 );
-testWidgets(
-  'shows error message when UserBloc state is failure',
+  testWidgets(
+  'shows error message when UserDetailBloc state is failure',
   (tester) async {
-    // ARRANGE
     when(
-      () => mockUserBloc.state,
+      () => mockUserDetailBloc.state,
     ).thenReturn(
-      const UserState(
+      const UserDetailState(
         status: Status.failure,
         errorMessage: 'Failed to load user',
       ),
     );
 
-    // ACT
     await tester.pumpWidget(
       MaterialApp(
-        home: BlocProvider<UserBloc>.value(
-          value: mockUserBloc,
+        home: BlocProvider<UserDetailBloc>.value(
+          value: mockUserDetailBloc,
           child: const UserDetailScreen(),
         ),
       ),
     );
 
-    // ASSERT
     expect(
       find.text('Failed to load user'),
       findsOneWidget,

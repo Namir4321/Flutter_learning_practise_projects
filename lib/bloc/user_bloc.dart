@@ -23,11 +23,6 @@ class UserDeleteRequest extends UserEvent {
   UserDeleteRequest({required this.id});
 }
 
-class UserDetailRequested extends UserEvent {
-  final int id;
-  UserDetailRequested(this.id);
-}
-
 class UserSearchChanged extends UserEvent {
   final String query;
   UserSearchChanged({required this.query});
@@ -72,7 +67,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     });
     on<UserLoadMoreRequest>((event, emit) async {
       if (!state.hasMore || state.isLoadingMore) return;
-      emit(state.copyWith(isLoadingMore: true, clearError: true));
+      emit(state.copyWith(isLoadingMore: true, clearLoadMoreError: true));
 
       try {
         final nextPage = state.currentPage + 1;
@@ -88,6 +83,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
             users: [...state.users, ...newUsers],
             currentPage: nextPage,
             hasMore: newUsers.length == 5,
+            clearLoadMoreError: true,
             isLoadingMore: false,
           ),
         );
@@ -97,6 +93,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
             status: Status.failure,
             errorMessage: err.toString(),
             isLoadingMore: false,
+            loadMoreError: err.toString(),
           ),
         );
       }
@@ -198,27 +195,6 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       } catch (err) {
         emit(
           state.copyWith(status: Status.failure, errorMessage: err.toString()),
-        );
-      }
-    });
-    on<UserDetailRequested>((event, emit) async {
-      try {
-        emit(state.copyWith(status: Status.loading, clearError: true));
-
-        final user = await repository.getUserById(event.id);
-        emit(
-          state.copyWith(
-            status: Status.success,
-            selectedUser: user,
-            clearError: true,
-          ),
-        );
-      } catch (error) {
-        emit(
-          state.copyWith(
-            status: Status.failure,
-            errorMessage: error.toString(),
-          ),
         );
       }
     });

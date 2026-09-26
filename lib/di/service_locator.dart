@@ -9,7 +9,7 @@ import 'package:basic_widget/service/connectivity_bloc.dart';
 import 'package:basic_widget/service/connectivity_service.dart';
 import 'package:basic_widget/service/user_cache_service.dart';
 import 'package:get_it/get_it.dart';
-
+import 'package:basic_widget/bloc/user_detail_bloc.dart';
 final getIt = GetIt.instance;
 
 void setupDependencies() {
@@ -31,6 +31,11 @@ void setupDependencies() {
   getIt.registerFactory<ConnectivityBloc>(
     () => ConnectivityBloc(connectivityService: getIt<ConnectivityService>()),
   );
+  getIt.registerFactory<UserDetailBloc>(
+  () => UserDetailBloc(
+    getIt<UserRepository>(),
+  ),
+);
 
   getIt.registerFactory<AuthBloc>(
     () => AuthBloc(

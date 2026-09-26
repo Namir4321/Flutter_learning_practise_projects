@@ -1,10 +1,10 @@
 import 'package:basic_widget/bloc/status.dart';
-import 'package:basic_widget/bloc/user_bloc.dart';
-import 'package:basic_widget/bloc/user_state.dart';
+import 'package:basic_widget/bloc/user_detail_bloc.dart';
+import 'package:basic_widget/bloc/user_detail_event.dart';
+import 'package:basic_widget/bloc/user_detail_state.dart';
 import 'package:basic_widget/model/user.dart';
 import 'package:basic_widget/repository/user_repository.dart';
 import 'package:bloc_test/bloc_test.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -17,57 +17,80 @@ void main() {
     mockUserRepository = MockUserRepository();
   });
 
-  blocTest<UserBloc, UserState>(
-    "emits loading then success when user details loads successfully",
-    build: () {
-      when(() => mockUserRepository.getUserById(5)).thenAnswer(
-        (_) async =>
-            const User(id: 5, email: "namir@example.com", name: "Namir"),
-      );
-      return UserBloc(mockUserRepository);
-    },
-    act: (bloc) {
-      bloc.add(UserDetailRequested(5));
-    },
-    expect: () => [
-      isA<UserState>().having(
-        (state) => state.status,
-        'status',
-        Status.loading,
-      ),
-      isA<UserState>()
-          .having((state) => state.status, "status", Status.success)
-          .having((state) => state.selectedUser?.id, "selectedUser.id", 5),
-    ],
-  );
-  blocTest(
-    "emits loading then failure when user detail loading fails",
+  blocTest<UserDetailBloc, UserDetailState>(
+    'emits loading then success when user detail loads successfully',
     build: () {
       when(
         () => mockUserRepository.getUserById(5),
-      ).thenThrow(Exception("Network error"));
-      return UserBloc(mockUserRepository);
+      ).thenAnswer(
+        (_) async => const User(
+          id: 5,
+          name: 'Namir',
+          email: 'namir@example.com',
+        ),
+      );
+
+      return UserDetailBloc(mockUserRepository);
     },
     act: (bloc) {
       bloc.add(UserDetailRequested(5));
     },
     expect: () => [
-      isA<UserState>().having(
+      isA<UserDetailState>().having(
         (state) => state.status,
         'status',
         Status.loading,
       ),
-      isA<UserState>()
-          .having((state) => state.status, "status", Status.failure)
+      isA<UserDetailState>()
+          .having(
+            (state) => state.status,
+            'status',
+            Status.success,
+          )
+          .having(
+            (state) => state.user?.id,
+            'user.id',
+            5,
+          ),
+    ],
+    verify: (_) {
+      verify(
+        () => mockUserRepository.getUserById(5),
+      ).called(1);
+    },
+  );
+
+  blocTest<UserDetailBloc, UserDetailState>(
+    'emits loading then failure when user detail loading fails',
+    build: () {
+      when(
+        () => mockUserRepository.getUserById(5),
+      ).thenThrow(
+        Exception('Network error'),
+      );
+
+      return UserDetailBloc(mockUserRepository);
+    },
+    act: (bloc) {
+      bloc.add(UserDetailRequested(5));
+    },
+    expect: () => [
+      isA<UserDetailState>().having(
+        (state) => state.status,
+        'status',
+        Status.loading,
+      ),
+      isA<UserDetailState>()
+          .having(
+            (state) => state.status,
+            'status',
+            Status.failure,
+          )
           .having(
             (state) => state.errorMessage,
             'errorMessage',
             'Exception: Network error',
           ),
     ],
-    verify: (_) {
-      verify(() => mockUserRepository.getUserById(5)).called(1);
-    },
   );
-  
 }

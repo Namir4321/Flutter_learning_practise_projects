@@ -1,6 +1,6 @@
 import 'package:basic_widget/bloc/status.dart';
-import 'package:basic_widget/bloc/user_bloc.dart';
-import 'package:basic_widget/bloc/user_state.dart';
+import 'package:basic_widget/bloc/user_detail_bloc.dart';
+import 'package:basic_widget/bloc/user_detail_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -13,7 +13,7 @@ class UserDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('User Details'),
       ),
-      body: BlocBuilder<UserBloc, UserState>(
+      body: BlocBuilder<UserDetailBloc, UserDetailState>(
         builder: (context, state) {
           if (state.status == Status.loading) {
             return const Center(
@@ -29,7 +29,7 @@ class UserDetailScreen extends StatelessWidget {
             );
           }
 
-          final user = state.selectedUser;
+          final user = state.user;
 
           if (user == null) {
             return const Center(

@@ -6,48 +6,49 @@ class UserState extends Equatable {
   final Status status;
   final List<User> users;
   final String? errorMessage;
-  final bool clearError;
+
   final int currentPage;
   final bool hasMore;
   final bool isLoadingMore;
   final String searchQuery;
   final User? selectedUser;
+  final String? loadMoreError;
 
   const UserState({
     this.status = Status.initial,
     this.users = const [],
     this.errorMessage,
-    this.clearError = false,
     this.currentPage = 1,
     this.hasMore = true,
     this.isLoadingMore = false,
     this.searchQuery = "",
     this.selectedUser,
+    this.loadMoreError,
   });
 
   UserState copyWith({
     Status? status,
     List<User>? users,
     String? errorMessage,
-    bool? clearError,
+    bool clearError = false,
     int? currentPage,
     bool? hasMore,
     bool? isLoadingMore,
     String? searchQuery,
-    User? selectedUser,
+    String? loadMoreError,
+    bool clearLoadMoreError = false,
   }) {
     return UserState(
       status: status ?? this.status,
       users: users ?? this.users,
-      errorMessage: (clearError ?? false)
-          ? null
-          : errorMessage ?? this.errorMessage,
-      clearError: clearError ?? false,
+      errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
       currentPage: currentPage ?? this.currentPage,
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       searchQuery: searchQuery ?? this.searchQuery,
-      selectedUser: selectedUser ?? this.selectedUser,
+      loadMoreError: clearLoadMoreError
+          ? null
+          : loadMoreError ?? this.loadMoreError,
     );
   }
 
@@ -56,10 +57,9 @@ class UserState extends Equatable {
     status,
     users,
     errorMessage,
-    clearError,
+    loadMoreError,
     currentPage,
     hasMore,
     isLoadingMore,
-    selectedUser,
   ];
 }
